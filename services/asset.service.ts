@@ -26,4 +26,8 @@ export class AssetService {
     await AssetModel.findByIdAndUpdate(id, data);
   }
 
+  static async dispose(id: string) {
+    await AssetModel.findByIdAndUpdate(id, {status : "disposed", condition : "damaged" });
+  }
+
 }

@@ -2,6 +2,9 @@ import { Response } from "express";
 import { AuthRequest } from "../types/request.type";
 import { TransferRequestService } from "../services/transferRequest.service";
 import { AssetService } from "../services/asset.service";
+import { DisposalRecordService } from "../services/disposalRecord.service";
+import cloudinary from "../utils/cloudinary";
+import fs from "fs";
 
 export class SystemController {
 
@@ -57,6 +60,8 @@ export class SystemController {
         condition: asset.condition,
         status: "in use",
         custodian: transferRequest.custodian ?? null,
+        date : asset.date,
+        value : asset.value
       })
     }
 
@@ -84,6 +89,43 @@ export class SystemController {
 
     const allRequests = await TransferRequestService.getAll()
     response.send(allRequests)
+  }
+
+  static getDisposalRecords = async (request: AuthRequest, response: Response) => {
+    const records = await DisposalRecordService.getAll()
+    response.send(records)
+  }
+
+  static createDisposalRecord = async (request: AuthRequest, response: Response) => {
+    const { assetname, message, date, college, recordedBy, assetId } = request.body
+
+    let proofUrl = ""
+
+    // Upload image to cloudinary if a file was uploaded
+    if (request.file) {
+      const result = await cloudinary.uploader.upload(request.file.path, {
+        folder: "disposal-proofs",
+      })
+      proofUrl = result.secure_url
+
+      // Clean up local file after upload
+      fs.unlink(request.file.path, () => {})
+    }
+
+    
+
+    await DisposalRecordService.create({
+      assetname,
+      message,
+      date,
+      college,
+      recordedBy,
+      proof: proofUrl,
+    })
+
+    await AssetService.dispose(assetId)
+
+    response.send({ message: "Disposal record created successfully" })
   }
 
 }
