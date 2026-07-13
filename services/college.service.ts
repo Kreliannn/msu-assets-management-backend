@@ -8,7 +8,7 @@ export class CollegeService {
   }
 
   static async getAll() {
-    const colleges = CollegeModel.find();
+    const colleges = CollegeModel.find().sort({ _id: -1 });
     return colleges
   }
 

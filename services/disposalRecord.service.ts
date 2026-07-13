@@ -8,7 +8,7 @@ export class DisposalRecordService {
   }
 
   static async getAll() {
-    const records = DisposalRecordModel.find();
+    const records = DisposalRecordModel.find().sort({ _id: -1 });
     return records
   }
 

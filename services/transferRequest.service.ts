@@ -8,7 +8,7 @@ export class TransferRequestService {
   }
 
   static async getAll() {
-    const transferRequests = TransferRequestModel.find();
+    const transferRequests = TransferRequestModel.find().sort({ _id: -1 });
     return transferRequests
   }
 

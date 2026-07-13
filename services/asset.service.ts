@@ -8,7 +8,7 @@ export class AssetService {
   }
 
   static async getAll() {
-    const assets = AssetModel.find();
+    const assets = AssetModel.find().sort({ _id: -1 });
     return assets
   }
 

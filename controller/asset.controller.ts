@@ -2,12 +2,19 @@ import { Response } from "express";
 import { AuthRequest } from "../types/request.type";
 import { assetsInterfaceInput } from "../types/asset.type";
 import { AssetService } from "../services/asset.service";
+import { generateQrCode } from "../utils/customFunction";
 
 export class AssetController {
 
   static create = async (request: AuthRequest, response: Response) => {
-    const assetData: assetsInterfaceInput = request.body
-    await AssetService.create(assetData)
+
+    const assetData: assetsInterfaceInput = request.body.assets
+    const qty: number = request.body.qty
+    for (let i = 0; i < qty; i++) {
+      const asset = assetData
+      asset.qr = generateQrCode()
+      await AssetService.create(asset)
+    }
     const assets = await AssetService.getAll()
     response.send(assets)
   }
