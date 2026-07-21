@@ -58,4 +58,19 @@ export class AssetController {
     response.send({ message: "Asset deleted successfully" })
   }
 
+  static assign = async (request: AuthRequest, response: Response) => {
+    const { id } = request.params
+    const { assignTo } = request.body
+
+    const asset = await AssetService.get(id)
+    if (!asset) {
+      response.status(404).send("Asset not found")
+      return
+    }
+
+    await AssetService.assign(id, assignTo ?? null)
+    const updated = await AssetService.get(id)
+    response.send(updated)
+  }
+
 }

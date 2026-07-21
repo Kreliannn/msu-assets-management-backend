@@ -61,7 +61,8 @@ export class SystemController {
         status: "in use",
         custodian: transferRequest.custodian ?? null,
         date : asset.date,
-        value : asset.value
+        value : asset.value,
+        assignTo : asset.assignTo!
       })
     }
 

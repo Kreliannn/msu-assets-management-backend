@@ -11,6 +11,7 @@ const AssetSchema = new Schema({
     condition : { type: String, required: true },
     status : { type: String, required: true },
     custodian :  { type: String, required: false },
+    assignTo :  { type: String, required: false },
 });
 
 export default mongoose.model('Assets', AssetSchema)

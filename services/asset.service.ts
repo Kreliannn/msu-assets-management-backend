@@ -30,4 +30,8 @@ export class AssetService {
     await AssetModel.findByIdAndUpdate(id, {status : "disposed", condition : "damaged" });
   }
 
+  static async assign(id: string, assignTo: string | null) {
+    await AssetModel.findByIdAndUpdate(id, { assignTo });
+  }
+
 }
