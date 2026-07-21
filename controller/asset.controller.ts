@@ -5,6 +5,7 @@ import { AssetService } from "../services/asset.service";
 import { generateQrCode } from "../utils/customFunction";
 import ExcelJS from "exceljs";
 import fs from "fs";
+import { TransferRequestService } from "../services/transferRequest.service";
 
 export class AssetController {
 
@@ -83,7 +84,24 @@ export class AssetController {
       return
     }
 
-    await AssetService.bulkTransfer(ids, location ?? null, custodian ?? null)
+
+    const date = new Date().toISOString().split("T")[0]
+
+    ids.forEach(async (id) => {
+        const asset = await AssetService.get(id)
+
+        await TransferRequestService.create({
+          assetId : id,
+          date,
+          assetname : asset?.name!,
+          college: location || null,
+          custodian: custodian || null,
+          status: "pending",
+        })
+
+    })
+
+    
     const updated = await AssetService.getAll()
     response.send(updated)
   }
