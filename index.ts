@@ -6,7 +6,7 @@ import routes from "./routes/route"
 import cors from "cors"
 import dotenv from 'dotenv';
 import 'dotenv/config';
-
+import assetModel from './model/asset.model';
 
 
 dotenv.config();
@@ -27,6 +27,20 @@ mongoose.connect(mongodb_uri)
 app.get('/', async (request: Request, response: Response) => {
   response.send("working server...........")
 });
+
+
+app.get('/test', async (request: Request, response: Response) => {
+
+  await assetModel.updateMany(
+    { condition: "damaged" },
+    { $set: { condition: "unserviceable" } }
+  );
+
+ 
+  response.send("working")
+});
+
+
 
 
 app.listen(port, () => {
