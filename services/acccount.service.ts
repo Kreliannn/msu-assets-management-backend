@@ -23,7 +23,7 @@ export class AccountService {
     return account
   }
 
-  static async update(id : string, data : accountInterface) {
+  static async update(id : string, data : Partial<accountInterfaceInput>) {
     await AccountModel.findByIdAndUpdate(id, data);
   }
 

@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../types/request.type";
 import { TransferRequestService } from "../services/transferRequest.service";
 import { AssetService } from "../services/asset.service";
+import { LogService } from "../services/logs.service";
 import { DisposalRecordService } from "../services/disposalRecord.service";
 import cloudinary from "../utils/cloudinary";
 import fs from "fs";
@@ -22,6 +23,7 @@ export class SystemController {
       status: "pending",
     })
 
+    await LogService.create({ type: "create", entity: "TransferRequest", entityId: "", performedBy: "system", description: `Transfer request for "${assetname}"`, date })
     response.send({ message: "Transfer request submitted successfully", status: "pending" })
   }
 
@@ -67,6 +69,8 @@ export class SystemController {
     }
 
     const allRequests = await TransferRequestService.getAll()
+    const logDate = new Date().toISOString().split("T")[0]
+    await LogService.create({ type: "update", entity: "TransferRequest", entityId: id, performedBy: "system", description: `Approved transfer request for "${transferRequest.assetname}"`, date: logDate })
     response.send(allRequests)
   }
 
@@ -89,6 +93,8 @@ export class SystemController {
     })
 
     const allRequests = await TransferRequestService.getAll()
+    const logDate = new Date().toISOString().split("T")[0]
+    await LogService.create({ type: "update", entity: "TransferRequest", entityId: id, performedBy: "system", description: `Rejected transfer request for "${transferRequest.assetname}"`, date: logDate })
     response.send(allRequests)
   }
 
@@ -126,6 +132,8 @@ export class SystemController {
 
     await AssetService.dispose(assetId)
 
+    const logDate = new Date().toISOString().split("T")[0]
+    await LogService.create({ type: "create", entity: "DisposalRecord", entityId: "", performedBy: "system", description: `Disposed asset "${assetname}"`, date: logDate })
     response.send({ message: "Disposal record created successfully" })
   }
 

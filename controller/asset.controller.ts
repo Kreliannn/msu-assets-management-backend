@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../types/request.type";
 import { assetsInterfaceInput } from "../types/asset.type";
 import { AssetService } from "../services/asset.service";
+import { LogService } from "../services/logs.service";
 import { generateQrCode } from "../utils/customFunction";
 import ExcelJS from "exceljs";
 import fs from "fs";
@@ -19,7 +20,35 @@ export class AssetController {
       await AssetService.create(asset)
     }
     const assets = await AssetService.getAll()
+    const date = new Date().toISOString().split("T")[0]
+    await LogService.create({ type: "create", entity: "Asset", entityId: "", performedBy: "system", description: `Created ${qty} asset(s) "${assetData.name}"`, date })
     response.send(assets)
+  }
+
+
+  static transfer = async (request: AuthRequest, response: Response) => {
+      const { assetId, custodian, college, assetname } = request.body
+      
+      const asset = await AssetService.get(assetId)
+      if (asset) {
+        await AssetService.update(assetId, {
+          name: asset.name,
+          qr: asset.qr,
+          category: asset.category,
+          location: college ?? null,
+          condition: asset.condition,
+          status: "in use",
+          custodian: custodian ?? null,
+          date : asset.date,
+          value : asset.value,
+          assignTo : asset.assignTo!
+        })
+      }
+  
+      const date = new Date().toISOString().split("T")[0]
+      await LogService.create({ type: "update", entity: "Asset", entityId: assetId, performedBy: "system", description: `Transferred asset "${assetname}" to ${college || "unknown"} / ${custodian || "unknown"}`, date })
+  
+      response.send({ message: "Transfer request submitted successfully", status: "pending" })
   }
 
   static getAll = async (request: AuthRequest, response: Response) => {
@@ -45,8 +74,11 @@ export class AssetController {
       response.status(404).send("Asset not found")
       return
     }
+    const prevName = asset.name
     await AssetService.update(id, assetData)
     const updated = await AssetService.get(id)
+    const date = new Date().toISOString().split("T")[0]
+    await LogService.create({ type: "update", entity: "Asset", entityId: id, performedBy: "system", description: `Updated asset "${prevName}"`, date })
     response.send(updated)
   }
 
@@ -57,7 +89,10 @@ export class AssetController {
       response.status(404).send("Asset not found")
       return
     }
+    const name = asset.name
     await AssetService.delete(id)
+    const date = new Date().toISOString().split("T")[0]
+    await LogService.create({ type: "delete", entity: "Asset", entityId: id, performedBy: "system", description: `Deleted asset "${name}"`, date })
     response.send({ message: "Asset deleted successfully" })
   }
 
@@ -73,6 +108,8 @@ export class AssetController {
 
     await AssetService.assign(id, assignTo ?? null)
     const updated = await AssetService.get(id)
+    const date = new Date().toISOString().split("T")[0]
+    await LogService.create({ type: "update", entity: "Asset", entityId: id, performedBy: "system", description: `Assigned asset "${asset?.name}" to ${assignTo || "unassigned"}`, date })
     response.send(updated)
   }
 
@@ -84,25 +121,11 @@ export class AssetController {
       return
     }
 
-
-    const date = new Date().toISOString().split("T")[0]
-
-    ids.forEach(async (id) => {
-        const asset = await AssetService.get(id)
-
-        await TransferRequestService.create({
-          assetId : id,
-          date,
-          assetname : asset?.name!,
-          college: location || null,
-          custodian: custodian || null,
-          status: "pending",
-        })
-
-    })
-
+    await AssetService.bulkTransfer(ids, location, custodian)
     
     const updated = await AssetService.getAll()
+    const date = new Date().toISOString().split("T")[0]
+    await LogService.create({ type: "update", entity: "Asset", entityId: "", performedBy: "system", description: `Bulk transferred ${ids.length} asset(s)`, date })
     response.send(updated)
   }
 
@@ -115,6 +138,8 @@ export class AssetController {
       return
     }
 
+    const date = new Date().toISOString().split("T")[0]
+    await LogService.create({ type: "update", entity: "Asset", entityId: id, performedBy: "system", description: `Toggled repair status for asset "${updated.name}"`, date })
     response.send(updated)
   }
 
@@ -261,6 +286,8 @@ export class AssetController {
         // Ignore cleanup errors
       }
 
+      const logDate = new Date().toISOString().split("T")[0]
+      await LogService.create({ type: "create", entity: "Asset", entityId: "", performedBy: "system", description: `Imported ${createdAssets.length} asset(s) from Excel`, date: logDate })
       response.json({
         created: createdAssets.length,
         errors: errors.length > 0 ? errors : undefined,
