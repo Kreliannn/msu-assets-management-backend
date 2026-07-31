@@ -30,6 +30,14 @@ export class AssetService {
     await AssetModel.findByIdAndUpdate(id, {status : "disposed", condition : "unserviceable" });
   }
 
+  static async borrow(id: string) {
+    await AssetModel.findByIdAndUpdate(id, { status: "borrowed" });
+  }
+
+  static async returnBorrow(id: string) {
+    await AssetModel.findByIdAndUpdate(id, { status: "in use" });
+  }
+
   static async assign(id: string, assignTo: string | null) {
     await AssetModel.findByIdAndUpdate(id, { assignTo });
   }

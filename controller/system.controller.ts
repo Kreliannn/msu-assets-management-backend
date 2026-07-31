@@ -4,6 +4,7 @@ import { TransferRequestService } from "../services/transferRequest.service";
 import { AssetService } from "../services/asset.service";
 import { LogService } from "../services/logs.service";
 import { DisposalRecordService } from "../services/disposalRecord.service";
+import { BorrowService } from "../services/borrow.service";
 import cloudinary from "../utils/cloudinary";
 import fs from "fs";
 
@@ -101,6 +102,73 @@ export class SystemController {
   static getDisposalRecords = async (request: AuthRequest, response: Response) => {
     const records = await DisposalRecordService.getAll()
     response.send(records)
+  }
+
+  static createBorrowRecord = async (request: AuthRequest, response: Response) => {
+    const { studentName, studentd, studentSection, assetId, assetName, assetQr } = request.body
+
+    const now = new Date()
+    const borrowDate = now.toISOString().split("T")[0]
+    const borrowTime = now.toTimeString().split(" ")[0].slice(0, 5)
+
+    await BorrowService.create({
+      studentName,
+      studentd,
+      studentSection,
+      borrowDate,
+      borrowTime,
+      returnDate: null,
+      returnTime: null,
+      assetId,
+      assetName,
+      assetQr,
+      status: "borrowed",
+    })
+
+    await AssetService.borrow(assetId)
+
+    const logDate = new Date().toISOString().split("T")[0]
+    await LogService.create({ type: "create", entity: "Borrow", entityId: "", performedBy: "system", description: `Asset "${assetName}" borrowed by ${studentName}`, date: logDate })
+    response.send({ message: "Borrow record created successfully", status: "borrowed" })
+  }
+
+  static getBorrowRecords = async (request: AuthRequest, response: Response) => {
+    const borrows = await BorrowService.getAll()
+    response.send(borrows)
+  }
+
+  static returnBorrowRecord = async (request: AuthRequest, response: Response) => {
+    const { id } = request.params
+
+    const borrow = await BorrowService.get(id)
+    if (!borrow) {
+      response.status(404).send("Borrow record not found")
+      return
+    }
+
+    const now = new Date()
+    const returnDate = now.toISOString().split("T")[0]
+    const returnTime = now.toTimeString().split(" ")[0].slice(0, 5)
+
+    await BorrowService.update(id, {
+      studentName: borrow.studentName,
+      studentd: borrow.studentd,
+      studentSection: borrow.studentSection,
+      borrowDate: borrow.borrowDate,
+      borrowTime: borrow.borrowTime,
+      returnDate,
+      returnTime,
+      assetId: borrow.assetId,
+      assetName: borrow.assetName,
+      assetQr: borrow.assetQr,
+      status: "returned",
+    })
+
+    await AssetService.returnBorrow(borrow.assetId)
+
+    const logDate = new Date().toISOString().split("T")[0]
+    await LogService.create({ type: "update", entity: "Borrow", entityId: id, performedBy: "system", description: `Asset "${borrow.assetName}" returned by ${borrow.studentName}`, date: logDate })
+    response.send({ message: "Borrow record returned successfully", status: "returned" })
   }
 
   static createDisposalRecord = async (request: AuthRequest, response: Response) => {

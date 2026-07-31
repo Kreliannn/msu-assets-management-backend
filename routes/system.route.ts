@@ -12,4 +12,8 @@ route.put("/transfer-request/reject/:id", SystemController.rejectTransferRequest
 route.get("/disposal-records", SystemController.getDisposalRecords)
 route.post("/disposal-record", upload.single("proof"), SystemController.createDisposalRecord)
 
+route.post("/borrow", SystemController.createBorrowRecord)
+route.get("/borrows", SystemController.getBorrowRecords)
+route.put("/borrow/return/:id", SystemController.returnBorrowRecord)
+
 export default route
