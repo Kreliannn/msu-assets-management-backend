@@ -17,6 +17,11 @@ export class CollegeService {
     return college
   }
 
+  static async getByDepartment(department: string) {
+    const college = await CollegeModel.findOne({ department });
+    return college
+  }
+
   static async delete(id: string) {
     const college = CollegeModel.findByIdAndDelete(id);
     return college

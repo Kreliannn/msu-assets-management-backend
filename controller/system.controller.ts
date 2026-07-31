@@ -7,20 +7,23 @@ import { DisposalRecordService } from "../services/disposalRecord.service";
 import { BorrowService } from "../services/borrow.service";
 import cloudinary from "../utils/cloudinary";
 import fs from "fs";
+import { CollegeService } from "../services/college.service";
 
 export class SystemController {
 
   static transferRequest = async (request: AuthRequest, response: Response) => {
-    const { assetId, custodian, college, assetname } = request.body
+    const { assetId,  assetname } = request.body
 
     const date = new Date().toISOString().split("T")[0]
+
+    const college = await CollegeService.getByDepartment("CICS")
 
     await TransferRequestService.create({
       assetId,
       date,
       assetname,
-      college: college || null,
-      custodian: custodian || null,
+      college: college?.department!,
+      custodian: college?.custodian?.name!,
       status: "pending",
     })
 
